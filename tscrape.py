@@ -13,6 +13,8 @@ import re
 import requests
 import time
 
+import sys
+
 tracker = "open.demonii.com"
 
 port = 1337
@@ -29,10 +31,10 @@ def get_torrent_name(infohash):
 
 def pretty_show(infohash):
     print "Torrent Hash: ", infohash
-    try:
-        print "Torrent Name (from torrentz): ", get_torrent_name(infohash)
-    except:
-        print "Coundn'f find torrent name"
+    #try:
+    #    print "Torrent Name (from torrentz): ", get_torrent_name(infohash)
+    #except:
+    #    print "Coundn'f find torrent name"
     print "Seeds, Leechers, Completed", torrent_details[infohash] 
     print 
 
@@ -90,10 +92,11 @@ def get_tracker_IPs(infohash, connection_ID, clisocket, num_want=50, port=8080):
     peer_id = '%030x' % randrange(16**20)
     #num_want = 200
     #Construct packet to announce to tracker
-    announce_packet = struct.pack(">QLL", connection_ID, 1, transaction_id) + packet_hash + peer_id + struct.pack(">QQQLLLlH", 0, 0, 0, 2, 0, 0, num_want, port)
+    announce_packet = struct.pack(">QLL", connection_ID, 1, transaction_id) + packet_hash + peer_id + struct.pack(">qqqlLLlH", 0, 0, 0, 2, 0, 0, -1, port)
     clisocket.send(announce_packet)
-    res = clisocket.recv(20 + (6 * num_want))
-
+    res, addr = clisocket.recvfrom(1220)
+    recvd_IPs = (len(res) - 20)/6
+    print(recvd_IPs)
 
     #Check to see if we received an error
     if(struct.unpack(">L", res[0:4]) == 3):
@@ -104,7 +107,7 @@ def get_tracker_IPs(infohash, connection_ID, clisocket, num_want=50, port=8080):
     interval, leechers, seeders = struct.unpack(">LLL", res[index:index + 12])
     index = 20
     peer_IPs = []
-    for i in range(0,num_want):
+    for i in range(0,recvd_IPs):
         ip = socket.inet_ntoa(res[index:index + 4])
         print("Getting location for " + ip + "...")
         ip_location = get_geolocation_for_ip(ip)
@@ -127,7 +130,7 @@ def add_unique_IPs(infohash, connection_ID, clisocket, num_want=50, attempts=1, 
         last_len = 0 if torrent_IP[infohash] is None else len(torrent_IP[infohash])
         transaction_id = randrange(1,65535)
         #Construct packet to announce to tracker
-        announce_packet = struct.pack(">QLL", connection_ID, 1, transaction_id) + packet_hash + peer_id + struct.pack(">QQQLLLlH", 0, 0, 0, 2, 0, 0, num_want, port)
+        announce_packet = struct.pack(">QLL", connection_ID, 1, transaction_id) + packet_hash + peer_id + struct.pack(">qqqlLLlH", 0, 0, 0, 2, 0, 0, -1, port)
         clisocket.send(announce_packet)
         res = clisocket.recv(20 + (6 * num_want))
 
@@ -168,11 +171,11 @@ torrent_IP[torrent_hash] = []
 #print(get_geolocation_for_ip("90.154.73.111"))
 scrape_tracker(torrent_hash, connection_ID, clisocket)
 
-#get_tracker_IPs(torrent_hash, connection_ID, clisocket, 10)
+get_tracker_IPs(torrent_hash, connection_ID, clisocket, num_want=5)
 
-add_unique_IPs(torrent_hash, connection_ID, clisocket, 20, 3, 1)
+#add_unique_IPs(torrent_hash, connection_ID, clisocket, 20, 3, 1)
 
-print_torrent_IP(torrent_hash)
+#print_torrent_IP(torrent_hash)
 
 
 """
