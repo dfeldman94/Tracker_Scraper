@@ -3,6 +3,8 @@ Author: shadyabhi abhijeet.1989@gmail.com
 For protocol description(not mine), check http://bittorrent.org/beps/bep_0015.html#udp-tracker-protocol
 """
 
+import bencode
+import hashlib
 import socket
 import struct   
 from random import randrange #to generate random transaction_id
@@ -21,13 +23,23 @@ def parse_tracker_url(URL):
     return (re_match.group(1), re_match.group(2), re_match.group(3))
 
 #Check input arguments
-if not (len(sys.argv) == 3):
-    print("Usage Error: python tscrape.py TORRENT_HASH TRACKER_URL")
+if not (len(sys.argv) == 2):
+    print("Usage Error: python tscrape.py TORRENT_FILE_PATH")
     exit(1)
 
 #Parse inputs, create Tracker object
-tracker_type, tracker_address, port = parse_tracker_url(sys.argv[2])#"open.demonii.com"
-track = tracker.Tracker(sys.argv[1], tracker_type, tracker_address, int(port))
+torrent_file_name = sys.argv[1]
+try:
+    with open(torrent_file_name, 'rb') as torrentfile:
+        torrent = bencode.bdecode(torrentfile.read())
+except IOError:
+    #ERROR
+    print("Error: Cannot find file " + torrent_file_name)
+    exit(1)
+
+
+tracker_type, tracker_address, port = parse_tracker_url(torrent['announce'])#"open.demonii.com"
+track = tracker.Tracker(hashlib.sha1(bencode.bencode(torrent['info'])).hexdigest(), tracker_type, tracker_address, int(port))
 
 track.connect()
 track.scrape()
