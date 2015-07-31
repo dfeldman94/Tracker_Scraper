@@ -97,8 +97,8 @@ class Tracker(object):
 		for j in range(0, attempts):
 			recvd_IPs = self._announce_UDP(num_want) if (self.serv_type.lower() == "udp") else self._announce_http(num_want)
 			peer_IPs = 0
-			for i in range(0,recvd_IPs):
-				ip = socket.inet_ntoa(res[index:index + 4])
+			for ip in recvd_IPs:
+				#ip = socket.inet_ntoa(res[index:index + 4])
 			#u_port = struct.unpack(">H", res[index + 4: index + 6])
 
 				#{"IP": ip, "Port": u_port, "city":ip_location['city'], "country":ip_location['country_name']})#struct.unpack(">L", res[index:index + 4])
@@ -113,7 +113,6 @@ class Tracker(object):
 						self.geo_info[ip_location] = 1
 					else:
 						self.geo_info[ip_location] += 1
-				index += 6
 			time.sleep(delay)
 		return peer_IPs
 
@@ -122,7 +121,7 @@ class Tracker(object):
 		transaction_id = randrange(1,65535)
 
 		#Construct packet to announce to tracker
-		announce_packet = struct.pack(">QLL", self.connection_id, 1, transaction_id) + packet_hash + self.peer_id + struct.pack(">qqqlLLLH", 0, 0, 0, 2, 0, 0, 511, port)
+		announce_packet = struct.pack(">QLL", self.connection_id, 1, transaction_id) + self.info_hash.decode('hex') + self.peer_id + struct.pack(">qqqlLLLH", 0, 0, 0, 2, 0, 0, 511, self.port)
 		self.sock.send(announce_packet)
 		res, addr = self.sock.recvfrom(1220)#(20 + (6 * num_want)) #1220
 		recvd_IPs = (len(res) - 20)/6
@@ -137,7 +136,7 @@ class Tracker(object):
 		self.interval, self.leechers, self.seeders = struct.unpack(">LLL", res[index:index + 12])
 		index = 20
 		peer_IPs = []
-		for i in range(0,recvd_IPs):
+		for i in range(0, recvd_IPs):
 			ip = socket.inet_ntoa(res[index:index + 4])
 			#u_port = struct.unpack(">H", res[index + 4: index + 6])
 			peer_IPs.append(ip)
@@ -189,7 +188,7 @@ class Tracker(object):
 					formatted_line = loc[0] + ", " + loc[1]
 				else:
 					formatted_line = loc
-				loc += ": " + str(self.geo_info[loc])
+				formatted_line += ": " + str(self.geo_info[loc])
 				print(formatted_line)
 		elif IP:
 			self.print_IP()
