@@ -5,11 +5,17 @@ Utility functions for tracker scraper program
 """
 import re
 import requests
+from urlparse import urlparse, urlunsplit
 
 #Parse tracker url and return tuple as follows: (tracker_type (UDP or HTTP), tracker_url, tracker_port)
 def parse_tracker_url(URL):
-    re_match = re.match( r'(.*)://(.*):(.*)/.*', URL, re.I)
-    return (re_match.group(1), re_match.group(2), re_match.group(3))
+    #re_match = re.match( r'(.*)://(.*):(.*)/.*', URL, re.I)
+    #return (re_match.group(1), re_match.group(2), re_match.group(3))
+    URL = URL.lower()
+    URL_parsed = urlparse(URL)
+    netloc = URL_parsed.netloc.split(":")
+    return (URL_parsed.scheme, netloc[0], netloc[1])
+    
 
 #Get torrent name from torrentz.me NOT WORKING
 def get_torrent_name(infohash):
