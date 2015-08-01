@@ -6,6 +6,10 @@ Utility functions for tracker scraper program
 import re
 import requests
 from urlparse import urlparse, urlunsplit
+import geoip2.database
+
+#Set up geoip database reader
+ip_reader = geoip2.database.Reader('IP/City.mmdb')
 
 #Parse tracker url and return tuple as follows: (tracker_type (UDP or HTTP), tracker_url, tracker_port)
 def parse_tracker_url(URL):
@@ -28,8 +32,21 @@ def get_torrent_name(infohash):
 
 #Get geolocation from freegeoip.net and return json object
 def get_geolocation_for_ip(ip):
-    GEO_IP_url = 'http://freegeoip.net/json/'
-    url = '{}/{}'.format(GEO_IP_url, ip)
-    response = requests.get(url)
-    response.raise_for_status()
-    return response.json()
+    location = ip_reader.city(ip)
+    if (location.city.name is None) or ("\\" in location.city.name):
+        if location.country.name is None:
+            return ("Unknown", "Unknown")
+        else:
+            return (location.country.name, "Unknown")
+    else:
+        if location.country.name is None:
+            return ("Unknown", location.city.name)
+        else:
+            return (location.country.name, location.city.name)
+
+
+    #GEO_IP_url = 'http://freegeoip.net/json/'
+    #url = '{}/{}'.format(GEO_IP_url, ip)
+    #response = requests.get(url)
+    #response.raise_for_status()
+    #return response.json()

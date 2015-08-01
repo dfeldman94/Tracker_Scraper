@@ -20,7 +20,7 @@ import urllib
 import bencode
 from urlparse import urlparse, urlunsplit
 
-
+socket.setdefaulttimeout(10)
 
 #Class for representing tracker for a torrent
 class Tracker(object):
@@ -92,31 +92,37 @@ class Tracker(object):
 		return (self.seeders, self.leechers, self.completed)
 
 	#Get the requested num of ips from the tracker. 
-	def req_IPs(self, num_want=50, port=8080, attempts=1, delay=.5):
+	def get_IPs(self, num_want=50, port=8080):
 		packet_hash = self.info_hash.decode('hex')
-		for j in range(0, attempts):
-			recvd_IPs = self._announce_UDP(num_want) if (self.serv_type.lower() == "udp") else self._announce_http(num_want)
-			peer_IPs = 0
-			for ip in recvd_IPs:
-				#ip = socket.inet_ntoa(res[index:index + 4])
-			#u_port = struct.unpack(">H", res[index + 4: index + 6])
+		recvd_IPs = self._announce_UDP(num_want) if (self.serv_type.lower() == "udp") else self._announce_http(num_want)
+		unique_IPs = []
+		for ip in recvd_IPs:
+			if ip not in self.IP:
+				self.IP.append(ip)
+				unique_IPs.append(ip)
+				ip_location = util.get_geolocation_for_ip(ip)
+				if ip_location not in self.geo_info.keys():
+					self.geo_info[ip_location] = 1
+				else:
+					self.geo_info[ip_location] += 1
+		return unique_IPs
 
-				#{"IP": ip, "Port": u_port, "city":ip_location['city'], "country":ip_location['country_name']})#struct.unpack(">L", res[index:index + 4])
-				if ip not in self.IP:
-					self.IP.append(ip)
-					peer_IPs += 1
-					ip_location = util.get_geolocation_for_ip(ip)
-					ip_location = (ip_location['country_name'], ip_location['city']) if ip_location['city'] else (ip_location['country_name'])
-					print(ip_location)
-					if ip_location not in self.geo_info.keys():
-						#print("HHH")
-						self.geo_info[ip_location] = 1
-					else:
-						self.geo_info[ip_location] += 1
-			time.sleep(delay)
-		return peer_IPs
+	def get_all_IPs(self, max_attempts=20):
+		self.scrape()
+		total_IPs = self.leechers + self.seeders
+		collected_IPs = []
+		self.interval = 0
+		while(abs(total_IPs - len(collected_IPs)) > 3 and (max_attempts > 0)):
+			time.sleep(self.interval)
+			new_IPs = self.get_IPs()
+			print("Collected " + str(len(new_IPs)) + " new IPs. Will wait " + str(self.interval) + " seconds to try again if there are more IPs")
+			collected_IPs.extend(new_IPs)
+			max_attempts -= 1
+		return collected_IPs
+
 
 	def _announce_UDP(self, num_want):
+
 		#Get new transaction ID
 		transaction_id = randrange(1,65535)
 
@@ -125,7 +131,6 @@ class Tracker(object):
 		self.sock.send(announce_packet)
 		res, addr = self.sock.recvfrom(1220)#(20 + (6 * num_want)) #1220
 		recvd_IPs = (len(res) - 20)/6
-		print(recvd_IPs)
 
 		#Check to see if we received an error
 		if(struct.unpack(">L", res[0:4]) == 3):
@@ -150,9 +155,8 @@ class Tracker(object):
 		hashed = urllib.quote_plus(hashed)
 		encoding = urllib.urlencode({ 'infohash' : self.info_hash})
 		url = tracker + "?info_hash=" + hashed
-		txt = urlopen(url, timeout=1).read()
+		txt = urlopen(url, timeout=10).read()
 		data = bencode.bdecode(txt)
-		print(data)
 		torrent_details = (data["complete"], data["incomplete"])
 		return torrent_details
 
@@ -161,10 +165,8 @@ class Tracker(object):
 		hashed = binascii.a2b_hex(self.info_hash)
 		hashed = urllib.quote_plus(hashed)
 		url = tracker + "?info_hash=" + hashed + "&peer_id=12345678987654321234&port=" + str(self.port) + "&uploaded=0&downloaded=0&left=0&compact=1&event=started&numwant=" + str(num_want)
-		print(url)
-		txt = urlopen(url, timeout=200).read()
+		txt = urlopen(url, timeout=10).read()
 		data = bencode.bdecode(txt)
-		print(data)
 		peers = data['peers']
 		peer_IPs = []
 		index = 0
@@ -185,7 +187,9 @@ class Tracker(object):
 			for loc in self.geo_info.keys():
 				formatted_line = ""
 				if type(loc) is tuple:
-					formatted_line = loc[0] + ", " + loc[1]
+
+					formatted_line = u'' + loc[0] + ", " + loc[1]
+
 				else:
 					formatted_line = loc
 				formatted_line += ": " + str(self.geo_info[loc])

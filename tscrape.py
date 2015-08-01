@@ -57,7 +57,7 @@ track.scrape()
 track.print_details()
 
 print("Requesting IPs...")
-track.req_IPs(5)
+track.get_all_IPs()
 track.print_details(geo=True)
 #print("HERE")
 track.disconnect()
