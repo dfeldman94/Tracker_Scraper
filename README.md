@@ -3,6 +3,7 @@ DEPENDENCIES:
 	You must have the following python packages installed:
 		requests
 		bencode
+		geoip2
 
 USAGE: 
 1. In terminal, navigate to directory with tscrape.py.
