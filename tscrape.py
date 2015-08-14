@@ -28,12 +28,17 @@ import torrent
 
 
 #Check input arguments
-if not (len(sys.argv) == 2):
+if not (len(sys.argv) >= 2):
     print("Usage Error: python tscrape.py TORRENT_FILE_PATH")
     exit(1)
 
+ignore_wait = False
 #Parse inputs, create Tracker object
 torrent_file_name = sys.argv[1]
+if (len(sys.argv) > 2):
+	optional_arg = sys.argv[2]
+	if optional_arg.lower() == "-i":
+		ignore_wait = True
 try:
     with open(torrent_file_name, 'rb') as torrentfile:
         torrent_info = bencode.bdecode(torrentfile.read())
@@ -58,10 +63,9 @@ print("Connecting to " + torrent_info['info']['name'] + "...")
 #torr.dump_to_file(torr.name + ".info")
 #track.connect()
 track.scrape()
-track.print_details()
 
 print("Requesting IPs...")
-track.get_all_IPs()
+track.get_all_IPs(ignore_wait=ignore_wait, max_attempts=100)
 track.print_details(geo=True)
 track.dump_to_file(track.name + ".info")
 #print("HERE")

@@ -28,7 +28,7 @@ class Tracker(object):
 	def __init__(self, info_hash, serv_type, URL, port, name):
 		self.name = name
 		self.info_hash = info_hash
-		self.serv_type = serv_type
+		self.serv_type = serv_type.lower()
 		self.URL = URL
 		self.port = port
 		self.peer_id = '%030x' % randrange(16**20)
@@ -134,7 +134,7 @@ class Tracker(object):
 					self.geo_info[ip_location] += 1
 		return unique_IPs
 
-	def get_all_IPs(self, max_attempts=20):
+	def get_all_IPs(self, max_attempts=20, ignore_wait=False):
 		if not self.connected:
 			if(not self._connect_UDP()):
 				return None
@@ -142,11 +142,13 @@ class Tracker(object):
 		collected_IPs = []
 		self.interval = 0
 		while(abs(total_IPs - len(collected_IPs)) > 3 and (max_attempts > 0)):
-			time.sleep(self.interval)
+			if not ignore_wait:
+				time.sleep(self.interval)
 			new_IPs = self.get_IPs()
-			if not new_IPs:
+			if new_IPs == -1:
 				return None
-			print("Collected " + str(len(new_IPs)) + " new IPs. Will wait " + str(self.interval) + " seconds to try again if there are more IPs")
+			wait_str = ("Ignoring required wait interval...") if ignore_wait else ("Will wait " + str(self.interval) + " seconds to try again if there are more IPs")
+			print("Collected " + str(len(new_IPs)) + " new IPs. " + wait_str) 
 			collected_IPs.extend(new_IPs)
 			max_attempts -= 1
 		return collected_IPs
@@ -247,6 +249,8 @@ class Tracker(object):
 					formatted_line = loc
 				formatted_line += ": " + str(self.geo_info[loc]) + "\n"
 				info_file.write(formatted_line.encode('utf8'))
+		info_file.write("\n")
+		info_file.close()
 
 	def print_details(self, geo=False, IP=False):
 		print("Seeders: ", self.seeders)

@@ -52,7 +52,7 @@ class Torrent(object):
 	def dump_to_file(self, file_name):
 		info_file = None
 		try:
-			info_file = open(file_name, "a")
+			info_file = open(file_name, "w")
 		except OSError:
 			print("Error creating file '" + file_name + "'\nMake sure the file name is valid, and that you have proper write permissions.")
 		for each_tracker in self.tracker_list:
