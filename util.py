@@ -47,9 +47,6 @@ def dict_find(item, d):
 
 #Parse tracker url and return tuple as follows: (tracker_type (UDP or HTTP), tracker_url, tracker_port)
 def parse_tracker_url(URL):
-
-    #re_match = re.match( r'(.*)://(.*):(.*)/.*', URL, re.I)
-    #return (re_match.group(1), re_match.group(2), re_match.group(3))
     URL = URL.lower()
     URL_parsed = urlparse(URL)
     if (URL_parsed.scheme in ["http", "https"]):
@@ -81,21 +78,9 @@ def get_geolocation_for_ip(ip):
     loc["lat"] = "Unknown" if (location.location.latitude is None) else location.location.latitude
     loc["long"] = "Unknown" if (location.location.longitude is None) else location.location.longitude
     loc["n"] = 0
-    """print(location)
-    if (location.city.name is None) or ("\\" in location.city.name):
-        if location.country.name is None:
-            return ("Unknown", "Unknown")
-        else:
-            return (location.country.name, "Unknown")
-    else:
-        if location.country.name is None:
-            return ("Unknown", location.city.name)
-        else:
-            return (location.country.name, location.city.name)
-    """
     return loc
 
-def create_point(lat, longitude):
+def create_point(lat, longitude, peers):
     if lat == "Unknown" or longitude == "Unknown":
         return None
-    return "{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\": [" + str(longitude) + ", " + str(lat) +"]}}\n"#, \"properties\": {\"prop0\": 0}}"
+    return "{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\": [" + str(longitude) + ", " + str(lat) +"]}, \"properties\": {\"peers\":"+ str(peers) +"}}\n"

@@ -37,13 +37,24 @@ g.selectAll( "path" )
 
 var h = svg.append("g");
 
+var tooltip = d3.select("body")
+  .append("div")
+  .style("position", "absolute")
+  .style("z-index", "10")
+  .style("visibility", "hidden")
+  .text("Uninitialized");
+
+
 h.selectAll( "path" )
   .data ( point_data_json.features )
   .enter()
   .append("path")
   .attr( "fill", "red")
   .attr( "stroke", "black")
-  .attr( "d", geoPath);
+  .attr( "d", geoPath)
+  .on("mouseover", function(d){tooltip.text("Peers: " + d.properties.peers); return tooltip.style("visibility", "visible");})
+  .on("mousemove", function(){return tooltip.style("top", (event.pageY-10)+"px").style("left",(event.pageX+10)+"px");})
+  .on("mouseout", function(){return tooltip.style("visibility", "hidden");});
 
 
 
