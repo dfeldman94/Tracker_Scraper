@@ -43,9 +43,10 @@ class Torrent(object):
 						if each_IP not in self.IPs:
 							self.IPs.append(each_IP)
 							ip_location = util.get_geolocation_for_ip(each_IP)
-							loc_key = (ip_location['country'], ip_location['city'])
+							
 							if not ip_location:
 								continue
+							loc_key = (ip_location['country'], ip_location['city'])
 							if loc_key not in self.geo_info.keys():
 								ip_location['n'] = 1
 								self.geo_info[loc_key] = ip_location

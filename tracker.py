@@ -282,7 +282,6 @@ class Tracker(object):
 
 	def _announce_http(self, num_want, retry_attempt=False):
 		tracker = self.serv_type + "://" + self.URL + ":" + str(self.port) +"/announce"
-		print(tracker)
 		hashed = binascii.a2b_hex(self.info_hash)
 		hashed = urllib.quote_plus(hashed)
 		url = tracker + "?info_hash=" + hashed + "&peer_id=12345678987654321234&port=" + str(self.port) + "&uploaded=0&downloaded=0&left=0&compact=1&event=started&numwant=" + str(num_want)
