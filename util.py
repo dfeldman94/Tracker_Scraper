@@ -17,14 +17,14 @@ ip_reader = geoip2.database.Reader('IP/City.mmdb')
 ip_anon = GeoIP.open('IP/IPASN.dat', GeoIP.GEOIP_STANDARD)
 
 
-def tracker_list_init(torrent):
+def tracker_list_init(torrent, listen_port=8080):
     tracker_list = []
     try:
         for URL in torrent["announce-list"]:
             URL = URL[0]
             tracker_type, tracker_address, port = parse_tracker_url(URL)#"open.demonii.com"
         #tracker_type, tracker_address, port = util.parse_tracker_url("http://mgtracker.org:2710/announce")#"open.demonii.com"
-            tracker_list.append(tracker.Tracker(hashlib.sha1(bencode.bencode(torrent['info'])).hexdigest(), tracker_type, tracker_address, port))
+            tracker_list.append(tracker.Tracker(hashlib.sha1(bencode.bencode(torrent['info'])).hexdigest(), tracker_type, tracker_address, port, listen_port, torrent['info']['name']))
     except KeyError:
         print("Torrent has no announce-list, looking for single tracker...")
         try:
@@ -67,14 +67,21 @@ def get_torrent_name(infohash):
     return c.search(page).group(1)
 
 
-#Get geolocation from freegeoip.net and return json object
+#Get geolocation from freegeoip.net and return j
 def get_geolocation_for_ip(ip):
     try:
         location = ip_reader.city(ip)
     except geoip2.errors.AddressNotFoundError:
         print("Error: " + ip + " not in database")
         return None
-    #print(ip_anon.name_by_addr(ip))
+    loc = {}
+    loc["ip"] = ip
+    loc["city"] = "Unknown" if (location.city.name is None or "\\" in location.city.name) else location.city.name
+    loc["country"] = "Unknown" if (location.country.name is None or "\\" in location.country.name) else location.country.name #// = unicode name. deal with it!
+    loc["lat"] = "Unknown" if (location.location.latitude is None) else location.location.latitude
+    loc["long"] = "Unknown" if (location.location.longitude is None) else location.location.longitude
+    loc["n"] = 0
+    """print(location)
     if (location.city.name is None) or ("\\" in location.city.name):
         if location.country.name is None:
             return ("Unknown", "Unknown")
@@ -85,4 +92,10 @@ def get_geolocation_for_ip(ip):
             return ("Unknown", location.city.name)
         else:
             return (location.country.name, location.city.name)
+    """
+    return loc
 
+def create_point(lat, longitude):
+    if lat == "Unknown" or longitude == "Unknown":
+        return None
+    return "{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\": [" + str(longitude) + ", " + str(lat) +"]}}\n"#, \"properties\": {\"prop0\": 0}}"
