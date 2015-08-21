@@ -135,10 +135,11 @@ class Torrent(object):
 			print("Error opening file '" + filename + "'\nMake sure the file name is valid, and that you have proper write permissions.")
 		info_file.write("var point_data_json = {\"type\": \"FeatureCollection\", \"features\": [\n")
 		for loc in self.geo_info.keys():
-			point = util.create_point(self.geo_info[loc]['lat'], self.geo_info[loc]['long'], self.geo_info[loc]['n'])
+			loc_info = self.geo_info[loc]
+			point = util.create_point(loc_info['lat'], loc_info['long'], loc_info['n'], loc_info['city'], loc_info['country'])
 			if point is None:
 				continue
-			info_file.write(point)
+			info_file.write(point.encode("UTF-8"))
 			info_file.write(", ")
 		info_file.seek(-2, os.SEEK_END)
 		info_file.truncate()

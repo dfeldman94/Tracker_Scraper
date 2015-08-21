@@ -1,7 +1,7 @@
 
 <html>
 <head>
-  <title>A D3 map</title>
+  <title>Tracker Scraper Map</title>
   <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
   <script src="world_map.js"></script>
   <script src="output.js"></script>
@@ -25,7 +25,8 @@ var albersProjection = d3.geo.mercator()
   .translate( [width/2,height/1.5] );
 
 var geoPath = d3.geo.path()
-    .projection( albersProjection );
+    .projection( albersProjection )
+    .pointRadius(3);
 
 g.selectAll( "path" )
   .data( world_map_json.features )
@@ -42,6 +43,7 @@ var tooltip = d3.select("body")
   .style("position", "absolute")
   .style("z-index", "10")
   .style("visibility", "hidden")
+  .style("font-weight", "bold")
   .text("Uninitialized");
 
 
@@ -52,7 +54,7 @@ h.selectAll( "path" )
   .attr( "fill", "red")
   .attr( "stroke", "black")
   .attr( "d", geoPath)
-  .on("mouseover", function(d){tooltip.text("Peers: " + d.properties.peers); return tooltip.style("visibility", "visible");})
+  .on("mouseover", function(d){tooltip.text(d.properties.loc_name + ": " + d.properties.peers); return tooltip.style("visibility", "visible");})
   .on("mousemove", function(){return tooltip.style("top", (event.pageY-10)+"px").style("left",(event.pageX+10)+"px");})
   .on("mouseout", function(){return tooltip.style("visibility", "hidden");});
 

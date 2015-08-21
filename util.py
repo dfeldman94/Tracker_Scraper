@@ -80,7 +80,7 @@ def get_geolocation_for_ip(ip):
     loc["n"] = 0
     return loc
 
-def create_point(lat, longitude, peers):
+def create_point(lat, longitude, peers, city, country):
     if lat == "Unknown" or longitude == "Unknown":
         return None
-    return "{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\": [" + str(longitude) + ", " + str(lat) +"]}, \"properties\": {\"peers\":"+ str(peers) +"}}\n"
+    return u"{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\": [" + str(longitude) + ", " + str(lat) +"]}, \"properties\": {\"peers\":"+ str(peers) +",\"loc_name\":\""+ city + ", " + country + "\"}}\n"
